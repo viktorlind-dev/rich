@@ -34,7 +34,9 @@ def test_escape():
 
     # Not tags (escape not required)
     assert escape("[5]") == "[5]"
-    assert escape("\\[5]") == "\\[5]"
+    assert escape(r"\[5]") == r"\\[5]"
+    assert escape(r"\[0-9]") == r"\\[0-9]"
+    assert escape(r"C:\[Users]") == r"C:\\[Users]"
 
     # Test @ escape
     assert escape("[@foo]") == "\\[@foo]"
@@ -217,3 +219,21 @@ def test_render_meta():
 
     text = render("foo[@click=(1, 2, 3)]bar[/]baz")
     assert text.get_style_at_offset(console, 3).meta == {"@click": (1, 2, 3)}
+
+
+def test_escape_roundtrip():
+    # https://github.com/Textualize/rich/issues/4242
+    test_cases = [
+        r"\[0-9]",
+        r"pattern: \[0-9]+",
+        r"C:\[Users]",
+        r"a\[b",
+        r"\[",
+        r"\\[0-9]",
+        r"foo[bar]",
+        r"[5]",
+        r"[bold]x[/bold]",
+        r"\[bold]",
+    ]
+    for tc in test_cases:
+        assert Text.from_markup(escape(tc)).plain == tc
